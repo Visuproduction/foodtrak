@@ -55,19 +55,16 @@ npm run dev
 
 ## Supabase
 
-1. Créer un projet Supabase (ou utiliser un projet existant)
-2. Exécuter les migrations dans l'ordre :
-   - `supabase/migrations/002_foodtrak_schema.sql` (schéma isolé `foodtrak`)
-3. **Important** : FoodTrak utilise le schéma PostgreSQL `foodtrak` (pas `public`) pour coexister avec d'autres apps
-4. Lier un utilisateur Auth au merchant démo :
+Projet dédié **FoodTrak** (indépendant de Komback) :
+https://supabase.com/dashboard/project/dcirmugdwswurxaexieu
+
+Le schéma est déjà appliqué. Créez un compte commerçant via `/admin/login`, ou liez un user Auth :
 
 ```sql
-UPDATE foodtrak.merchants
+UPDATE merchants
 SET user_id = '<uuid-auth-user>'
 WHERE slug = 'demo-truck';
 ```
-
-5. Ajouter la `service_role` key dans `.env.local` (Dashboard → Settings → API)
 
 ## Déploiement Vercel
 

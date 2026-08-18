@@ -438,10 +438,80 @@ export async function uploadMenuImage(formData: FormData) {
   return { url: publicUrl };
 }
 
+function slugify(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 40);
+}
+
 export async function signIn(email: string, password: string) {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function signUp(
+  email: string,
+  password: string,
+  businessName: string
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signUp({ email, password });
+
+  if (error) return { error: error.message };
+  if (!data.user) return { error: "Impossible de créer le compte." };
+
+  if (!data.session) {
+    return {
+      error:
+        "Compte créé, mais la confirmation email est activée. Désactivez-la dans Supabase → Authentication → Providers → Email → Confirm email, puis reconnectez-vous.",
+    };
+  }
+
+  const { data: unclaimed } = await supabase
+    .from("merchants")
+    .select("id")
+    .eq("slug", "demo-truck")
+    .is("user_id", null)
+    .maybeSingle();
+
+  if (unclaimed) {
+    const { error: claimError } = await supabase
+      .from("merchants")
+      .update({
+        user_id: data.user.id,
+        business_name: businessName.trim() || "Pizza Truck Demo",
+      })
+      .eq("id", unclaimed.id);
+
+    if (claimError) return { error: claimError.message };
+    return { success: true };
+  }
+
+  const baseSlug = slugify(businessName) || "mon-truck";
+  let slug = baseSlug;
+  for (let i = 0; i < 8; i++) {
+    const { data: existing } = await supabase
+      .from("merchants")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!existing) break;
+    slug = `${baseSlug}-${i + 2}`;
+  }
+
+  const { error: insertError } = await supabase.from("merchants").insert({
+    user_id: data.user.id,
+    slug,
+    business_name: businessName.trim(),
+  });
+
+  if (insertError) return { error: insertError.message };
   return { success: true };
 }
 

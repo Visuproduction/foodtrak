@@ -160,6 +160,10 @@ ALTER TABLE foodtrak.loyalty_accounts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "ft_merchants_public_read" ON foodtrak.merchants FOR SELECT USING (true);
 CREATE POLICY "ft_merchants_owner_write" ON foodtrak.merchants FOR ALL
   USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "ft_merchants_claim_unclaimed" ON foodtrak.merchants FOR UPDATE
+  USING (user_id IS NULL) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "ft_merchants_insert_own" ON foodtrak.merchants FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "ft_categories_public_read" ON foodtrak.categories FOR SELECT USING (true);
 CREATE POLICY "ft_categories_owner_all" ON foodtrak.categories FOR ALL
